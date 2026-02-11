@@ -14,7 +14,6 @@ class CookieCategory(TranslatableMixin, ClusterableModel):
     
     slug = models.SlugField(
         max_length=100,
-        unique=True,
         help_text=_("Unique identifier for this category (e.g., 'analytics', 'marketing')")
     )
     title = models.CharField(
@@ -46,6 +45,7 @@ class CookieCategory(TranslatableMixin, ClusterableModel):
         verbose_name = _("Cookie Category")
         verbose_name_plural = _("Cookie Categories")
         ordering = ['order', 'slug']
+        unique_together = [('translation_key', 'locale')]
     
     def __str__(self):
         return self.title

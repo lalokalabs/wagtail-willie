@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
+from wagtail.models import Locale
 from .models import CookieCategory
 from .utils import encode_consent, decode_consent, get_consent_from_request, update_consent
 
@@ -10,7 +11,7 @@ class CookiePreferencesView(View):
     template_name = 'wagtail_willie/cookie_preferences.html'
     
     def get(self, request):
-        categories = CookieCategory.objects.all()
+        categories = CookieCategory.objects.filter(locale=Locale.get_active())
         current_consent = get_consent_from_request(request)
         
         # Get consent string for displaying timestamps
@@ -26,7 +27,7 @@ class CookiePreferencesView(View):
     def post(self, request):
         # Process consent form
         consent = {}
-        categories = CookieCategory.objects.all()
+        categories = CookieCategory.objects.filter(locale=Locale.get_active())
         
         for category in categories:
             if category.is_required:
@@ -54,7 +55,7 @@ class CookieBannerActionView(View):
     
     def post(self, request):
         action = request.POST.get('action')
-        categories = CookieCategory.objects.all()
+        categories = CookieCategory.objects.filter(locale=Locale.get_active())
         consent = {}
         
         for category in categories:
@@ -81,7 +82,11 @@ class AcceptCategoryView(View):
     """Handle accepting a specific cookie category"""
     
     def post(self, request, category_slug):
-        category = get_object_or_404(CookieCategory, slug=category_slug)
+        category = get_object_or_404(
+            CookieCategory,
+            slug=category_slug,
+            locale=Locale.get_active()
+        )
         
         # Don't allow changing required categories
         if category.is_required:
@@ -108,7 +113,11 @@ class DeclineCategoryView(View):
     """Handle declining a specific cookie category"""
     
     def post(self, request, category_slug):
-        category = get_object_or_404(CookieCategory, slug=category_slug)
+        category = get_object_or_404(
+            CookieCategory,
+            slug=category_slug,
+            locale=Locale.get_active()
+        )
         
         # Don't allow declining required categories
         if category.is_required:
