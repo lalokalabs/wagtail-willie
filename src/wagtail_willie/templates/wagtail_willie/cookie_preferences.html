@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load i18n wagtailcore_tags cookie_tags %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px;">
+    <h1>{% trans "Cookie Preferences" %}</h1>
+    
+    <p>{% trans "Manage your cookie preferences below. Essential cookies cannot be disabled as they are necessary for the website to function." %}</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.GET.next|default:'/' }}">
+        
+        {% for category in categories %}
+        <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; background: #f9f9f9;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <h3 style="margin: 0;">
+                    {{ category.title }}
+                    {% if category.is_required %}
+                        <span style="color: #e74c3c; font-size: 0.8em;">{% trans "Required" %}</span>
+                    {% endif %}
+                </h3>
+                
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input 
+                        type="checkbox" 
+                        name="category_{{ category.slug }}"
+                        {% if category.is_required %}checked disabled{% elif current_consent|get_item:category.slug %}checked{% endif %}
+                        style="width: 20px; height: 20px; margin-right: 10px;"
+                    >
+                    <span style="font-weight: bold; color: {% if current_consent|get_item:category.slug or category.is_required %}#27ae60{% else %}#e74c3c{% endif %};">
+                        {% if current_consent|get_item:category.slug or category.is_required %}
+                            {% trans "Accepted" %}
+                        {% else %}
+                            {% trans "Declined" %}
+                        {% endif %}
+                    </span>
+                </label>
+            </div>
+            
+            <p>{{ category.description }}</p>
+            
+            {% if not category.is_required %}
+                {% cookie_consent_timestamp category.slug as consent_time %}
+                {% if consent_time %}
+                <p style="font-size: 0.85em; color: #7f8c8d; margin-top: 10px;">
+                    {% if current_consent|get_item:category.slug %}
+                        {% trans "Accepted on:" %} {{ consent_time|date:"Y-m-d H:i" }}
+                    {% endif %}
+                </p>
+                {% endif %}
+            {% endif %}
+            
+            {% if category.cookies.all %}
+            <details style="margin-top: 15px;">
+                <summary style="cursor: pointer; font-weight: bold; color: #2c3e50;">
+                    {% trans "Cookies in this category:" %}
+                </summary>
+                <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #2c3e50; color: white;">
+                            <th style="padding: 10px; text-align: left;">{% trans "Cookie Name" %}</th>
+                            <th style="padding: 10px; text-align: left;">{% trans "Description" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cookie in category.cookies.all %}
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 10px; font-family: monospace;">{{ cookie.name }}</td>
+                            <td style="padding: 10px;">{{ cookie.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </details>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="submit" style="background: #3498db; color: white; border: none; padding: 15px 40px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                {% trans "Save Preferences" %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

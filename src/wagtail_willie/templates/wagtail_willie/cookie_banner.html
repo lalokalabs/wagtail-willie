@@ -1,0 +1,39 @@
+{% load i18n cookie_tags %}
+
+{% if show_banner %}
+<div id="cookie-consent-banner" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: white; border-top: 1px solid #ddd; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); padding: 20px;">
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px;">
+            <div style="flex: 1; min-width: 300px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold;">
+                    {% trans "Cookie Settings" %}
+                </h3>
+                <p style="margin: 0; font-size: 14px; color: #666;">
+                    {% trans "We use cookies to enhance your browsing experience and analyze our traffic. Please choose your preferences below." %}
+                </p>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <form method="post" action="{% url 'wagtail_willie:banner' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="accept_all">
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">
+                        {% trans "Accept All" %}
+                    </button>
+                </form>
+                <form method="post" action="{% url 'wagtail_willie:banner' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="decline_all">
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <button type="submit" style="padding: 10px 20px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                        {% trans "Decline All" %}
+                    </button>
+                </form>
+                <a href="{% url 'wagtail_willie:preferences' %}" style="padding: 10px 20px; background: #ecf0f1; color: #2c3e50; text-decoration: none; border-radius: 4px; font-size: 14px; display: inline-block;">
+                    {% trans "Manage Preferences" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
