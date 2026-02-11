@@ -310,6 +310,8 @@ timestamp = get_consent_timestamp(consent_string, 'analytics')
 
 ## Views
 
+**Important:** All views automatically filter cookie categories by the active locale using `Locale.get_active()`. This ensures users only see categories translated to their current language.
+
 ### Cookie Preferences View
 
 URL: `/cookies/preferences/`  
@@ -319,6 +321,8 @@ Displays the cookie preferences page where users can accept/decline individual c
 
 **Query Parameters:**
 - `next` - Redirect URL after saving preferences (default: `/`)
+
+**Locale Behavior:** Only shows categories for the active locale (e.g., Japanese categories when viewing in Japanese).
 
 ### Cookie Banner Action View
 
@@ -331,6 +335,8 @@ Handles "Accept All" and "Decline All" actions from the banner.
 - `action` - Either `accept_all` or `decline_all`
 - `next` - Redirect URL after action (default: `/`)
 
+**Locale Behavior:** Processes categories for the active locale only.
+
 ### Accept Category View
 
 URL: `/cookies/accept/<category_slug>/`  
@@ -340,6 +346,8 @@ Accepts a specific cookie category without affecting other categories.
 
 **POST Parameters:**
 - `next` - Redirect URL after action (default: `/`)
+
+**Locale Behavior:** Matches category by slug AND active locale to ensure correct language version is used.
 
 ### Decline Category View
 
@@ -440,27 +448,78 @@ The default templates use inline styles for zero dependencies. Override the temp
 
 ## Multilingual Setup
 
-Wagtail Willie uses Wagtail's translation system. To add translations:
+Wagtail Willie uses Wagtail's `TranslatableMixin` for full multilingual support. Cookie categories can have different translations for each locale.
 
-1. Enable Wagtail's internationalization in `settings.py`:
+### 1. Enable Wagtail's Internationalization
+
+Add to `settings.py`:
 
 ```python
 WAGTAIL_I18N_ENABLED = True
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES = [
     ('en', 'English'),
+    ('ja', 'Japanese'),
     ('es', 'Spanish'),
-    ('fr', 'French'),
 ]
 ```
 
-2. Create translations for each cookie category in the Wagtail admin by using the locale selector.
+### 2. Create Locales in Wagtail Admin
 
-3. Django's standard translation system handles UI strings:
+Go to **Settings > Locales** and ensure all your languages are added as Wagtail locales.
+
+### 3. Create Cookie Category Translations
+
+**Important:** Cookie categories use the same slug across all locales. The slug identifies the category across languages, while title and description can be translated.
+
+**Process:**
+
+1. Create your cookie categories in the default locale (e.g., English)
+   - Slug: `analytics`
+   - Title: `Analytics`
+   - Description: `These cookies help us understand...`
+
+2. To add a translation (e.g., Japanese):
+   - Go to **Settings > Cookie Categories**
+   - Select the category you want to translate
+   - Click **Translate** button in the top right
+   - Choose the target locale (e.g., Japanese)
+   - Keep the same slug: `analytics`
+   - Translate title: `アナリティクス`
+   - Translate description: `これらのCookieは、訪問者が...`
+
+3. The system will store both versions with the same slug but different locales:
+   - `analytics` (en): "Analytics"
+   - `analytics` (ja): "アナリティクス"
+
+### 4. How Cookie Consent Works Across Languages
+
+- Cookie consent is stored **site-wide**, not per-locale
+- Cookie format: `analytics=2026-02-10T00:11:49+00:00`
+- When a user accepts "Analytics" cookies in English, it applies to all locales
+- Views automatically filter categories by current locale using `locale=Locale.get_active()`
+- Template tags respect the current language context
+
+### 5. UI String Translations
+
+Django's standard translation system handles UI strings (button labels, messages, etc.):
 
 ```bash
+# Extract translatable strings
+python manage.py makemessages -l ja
 python manage.py makemessages -l es
+
+# Edit .po files in locale/ja/LC_MESSAGES/django.po
+
+# Compile translations
 python manage.py compilemessages
 ```
+
+### Database Schema
+
+The `unique_together` constraint ensures each locale can have its own version of a category:
+- `unique_together = [('translation_key', 'locale')]`
+- Multiple records can share the same slug (one per locale)
+- The `translation_key` links translations of the same category together
 
 ## GDPR Compliance
 
